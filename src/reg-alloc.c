@@ -64,10 +64,10 @@ void spill_var(basic_block_t *bb, var_t *var, int idx)
         var->offset = bb->belong_to->func->stack_size;
         bb->belong_to->func->stack_size += 4;
     }
-    ph2_ir_t *ir = var->is_global ? bb_add_ph2_ir(bb, OP_global_store)
-                                  : bb_add_ph2_ir(bb, OP_store);
+    ph2_ir_t *ir = bb_add_ph2_ir(bb, OP_store);
     ir->src0 = idx;
     ir->src1 = var->offset;
+    ir->is_var_global = var->is_global;
     REGS[idx].var = NULL;
     REGS[idx].polluted = 0;
 }
@@ -84,10 +84,10 @@ int find_in_regs(var_t *var)
 
 void load_var(basic_block_t *bb, var_t *var, int idx)
 {
-    ph2_ir_t *ir = var->is_global ? bb_add_ph2_ir(bb, OP_global_load)
-                                  : bb_add_ph2_ir(bb, OP_load);
+    ph2_ir_t *ir = bb_add_ph2_ir(bb, OP_load);
     ir->src0 = var->offset;
     ir->dest = idx;
+    ir->is_var_global = var->is_global;
     REGS[idx].var = var;
     REGS[idx].polluted = 0;
 }
@@ -248,9 +248,10 @@ void reg_alloc()
 
                 dest =
                     prepare_dest(GLOBAL_FUNC.fn->bbs, global_insn->rd, -1, -1);
-                ir = bb_add_ph2_ir(GLOBAL_FUNC.fn->bbs, OP_global_address_of);
+                ir = bb_add_ph2_ir(GLOBAL_FUNC.fn->bbs, OP_address_of);
                 ir->src0 = src0;
                 ir->dest = dest;
+                ir->is_var_global = true;
                 spill_var(GLOBAL_FUNC.fn->bbs, global_insn->rd, dest);
             } else {
                 global_insn->rd->offset = GLOBAL_FUNC.stack_size;
@@ -386,9 +387,10 @@ void reg_alloc()
 
                     /* store global variable immediately after assignment */
                     if (insn->rd->is_global) {
-                        ir = bb_add_ph2_ir(bb, OP_global_store);
+                        ir = bb_add_ph2_ir(bb, OP_store);
                         ir->src0 = dest;
                         ir->src1 = insn->rd->offset;
+                        ir->is_var_global = true;
                         REGS[dest].polluted = 0;
                     }
 
@@ -408,12 +410,10 @@ void reg_alloc()
                     }
 
                     dest = prepare_dest(bb, insn->rd, -1, -1);
-                    if (insn->rs1->is_global)
-                        ir = bb_add_ph2_ir(bb, OP_global_address_of);
-                    else
-                        ir = bb_add_ph2_ir(bb, OP_address_of);
+                    ir = bb_add_ph2_ir(bb, OP_address_of);
                     ir->src0 = insn->rs1->offset;
                     ir->dest = dest;
+                    ir->is_var_global = insn->rs1->is_global;
                     break;
                 case OP_assign:
                     if (insn->rd->consumed == -1)
@@ -437,9 +437,10 @@ void reg_alloc()
 
                     /* store global variable immediately after assignment */
                     if (insn->rd->is_global) {
-                        ir = bb_add_ph2_ir(bb, OP_global_store);
+                        ir = bb_add_ph2_ir(bb, OP_store);
                         ir->src0 = dest;
                         ir->src1 = insn->rd->offset;
+                        ir->is_var_global = true;
                         REGS[dest].polluted = 0;
                     }
 
@@ -655,9 +656,6 @@ void dump_ph2_ir()
         case OP_address_of:
             printf("\t%%x%c = %%sp + %d", rd, ph2_ir->src0);
             break;
-        case OP_global_address_of:
-            printf("\t%%x%c = %%gp + %d", rd, ph2_ir->src0);
-            break;
         case OP_label:
             printf("%s:", ph2_ir->func_name);
             break;
@@ -677,16 +675,12 @@ void dump_ph2_ir()
                 printf("\tret %%x%c", rs1);
             break;
         case OP_load:
-            printf("\tload %%x%c, %d(sp)", rd, ph2_ir->src0);
+            printf("\tload %%x%c, %d(%s)", rd, ph2_ir->src0,
+                   ph2_ir->is_var_global ? "gp" : "sp");
             break;
         case OP_store:
-            printf("\tstore %%x%c, %d(sp)", rs1, ph2_ir->src1);
-            break;
-        case OP_global_load:
-            printf("\tload %%x%c, %d(gp)", rd, ph2_ir->src0);
-            break;
-        case OP_global_store:
-            printf("\tstore %%x%c, %d(gp)", rs1, ph2_ir->src1);
+            printf("\tstore %%x%c, %d(%s)", rs1, ph2_ir->src1,
+                   ph2_ir->is_var_global ? "gp" : "sp");
             break;
         case OP_read:
             printf("\t%%x%c = (%%x%c)", rd, rs1);
@@ -698,10 +692,8 @@ void dump_ph2_ir()
             printf("\t(%%x%c) = @%s", rs1, ph2_ir->func_name);
             break;
         case OP_load_func:
-            printf("\tload %%t0, %d(sp)", ph2_ir->src0);
-            break;
-        case OP_global_load_func:
-            printf("\tload %%t0, %d(gp)", ph2_ir->src0);
+            printf("\tload %%t0, %d(%s)", ph2_ir->src0,
+                   ph2_ir->is_var_global ? "gp" : "sp");
             break;
         case OP_indirect:
             printf("\tindirect call @(%%t0)");

@@ -23,7 +23,6 @@ bool is_fusible_insn(ph2_ir_t *ph2_ir)
     case OP_log_not:
     case OP_negate:
     case OP_load:
-    case OP_global_load:
     case OP_load_data_address:
         return true;
     default:

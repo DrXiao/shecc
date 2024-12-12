@@ -25,7 +25,6 @@ void update_elf_offset(ph2_ir_t *ph2_ir)
             elf_offset += 4;
         return;
     case OP_address_of:
-    case OP_global_address_of:
         /* ARMv7 uses 12 bits to encode immediate value, but the higher 4 bits
          * are for rotation. See A5.2.4 "Modified immediate constants in ARM
          * instructions" in ARMv7-A manual.
@@ -42,7 +41,6 @@ void update_elf_offset(ph2_ir_t *ph2_ir)
             elf_offset += 4;
         return;
     case OP_load:
-    case OP_global_load:
         /* ARMv7 straight uses 12 bits to encode the offset of load instruction
          * (no rotation).
          */
@@ -54,7 +52,6 @@ void update_elf_offset(ph2_ir_t *ph2_ir)
             abort();
         return;
     case OP_store:
-    case OP_global_store:
         /* ARMv7 straight uses 12 bits to encode the offset of store instruction
          * (no rotation).
          */
@@ -220,8 +217,7 @@ void emit_ph2_ir(ph2_ir_t *ph2_ir)
             emit(__mov_i(__AL, rd, ph2_ir->src0));
         return;
     case OP_address_of:
-    case OP_global_address_of:
-        interm = ph2_ir->op == OP_address_of ? __sp : __r12;
+        interm = ph2_ir->is_var_global ? __r12 : __sp;
         if (ph2_ir->src0 > 255) {
             emit(__movw(__AL, __r8, ph2_ir->src0));
             emit(__movt(__AL, __r8, ph2_ir->src0));
@@ -233,8 +229,7 @@ void emit_ph2_ir(ph2_ir_t *ph2_ir)
         emit(__mov_r(__AL, rd, rn));
         return;
     case OP_load:
-    case OP_global_load:
-        interm = ph2_ir->op == OP_load ? __sp : __r12;
+        interm = ph2_ir->is_var_global ? __r12 : __sp;
         if (ph2_ir->src0 > 4095) {
             emit(__movw(__AL, __r8, ph2_ir->src0));
             emit(__movt(__AL, __r8, ph2_ir->src0));
@@ -244,8 +239,7 @@ void emit_ph2_ir(ph2_ir_t *ph2_ir)
             emit(__lw(__AL, rd, interm, ph2_ir->src0));
         return;
     case OP_store:
-    case OP_global_store:
-        interm = ph2_ir->op == OP_store ? __sp : __r12;
+        interm = ph2_ir->is_var_global ? __r12 : __sp;
         if (ph2_ir->src1 > 4095) {
             emit(__movw(__AL, __r8, ph2_ir->src1));
             emit(__movt(__AL, __r8, ph2_ir->src1));
