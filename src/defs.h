@@ -104,17 +104,13 @@ typedef enum {
     /* function pointer */
     OP_address_of_func, /* resolve function entry */
     OP_load_func,       /* prepare indirective call */
-    OP_global_load_func,
 
     /* memory address operations */
     OP_address_of, /* lookup variable's address */
-    OP_global_address_of,
-    OP_load, /* load a word from stack */
-    OP_global_load,
-    OP_store, /* store a word to stack */
-    OP_global_store,
-    OP_read,  /* read from memory address */
-    OP_write, /* write to memory address */
+    OP_load,       /* load a word */
+    OP_store,      /* store a word */
+    OP_read,       /* read from memory address */
+    OP_write,      /* write to memory address */
 
     /* arithmetic operators */
     OP_add,
@@ -263,6 +259,7 @@ struct ph2_ir {
     basic_block_t *else_bb;
     struct ph2_ir *next;
     bool is_branch_detached;
+    bool is_var_global;
 };
 
 typedef struct ph2_ir ph2_ir_t;
