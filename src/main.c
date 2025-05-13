@@ -110,8 +110,18 @@ int main(int argc, char *argv[])
     if (dump_ir)
         dump_ph2_ir();
 
+    /*
+     * ELF preprocess:
+     * 1. generate certain sections
+     * 2. calculate elf_code_start and elf_data_start
+     */
+    elf_preprocess();
+
     /* generate code from IR */
     code_generate();
+
+    /* ELF postprocess: generate all ELF headers */
+    elf_postprocess();
 
     /* output code in ELF */
     elf_generate(out);

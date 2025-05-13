@@ -428,8 +428,6 @@ void emit_ph2_ir(ph2_ir_t *ph2_ir)
 
 void code_generate(void)
 {
-    elf_data_start = elf_code_start + elf_offset;
-
     /* start */
     emit(__lui(__t0, rv_hi(GLOBAL_FUNC->stack_size)));
     emit(__addi(__t0, __t0, rv_lo(GLOBAL_FUNC->stack_size)));

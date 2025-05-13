@@ -80,9 +80,12 @@ hashmap_t *INCLUSION_MAP;
 strbuf_t *elf_code;
 strbuf_t *elf_data;
 strbuf_t *elf_header;
+strbuf_t *elf_program_header;
 strbuf_t *elf_symtab;
 strbuf_t *elf_strtab;
 strbuf_t *elf_section;
+strbuf_t *elf_section_header;
+strbuf_t *elf_shstr;
 int elf_header_len = 0x54; /* ELF fixed: 0x34 + 1 * 0x20 */
 int elf_code_start;
 int elf_data_start;
@@ -972,8 +975,6 @@ void strbuf_free(strbuf_t *src)
  */
 void global_init(void)
 {
-    elf_code_start = ELF_START + elf_header_len;
-
     MACROS = malloc(MAX_ALIASES * sizeof(macro_t));
     TYPES = malloc(MAX_TYPES * sizeof(type_t));
     BLOCK_ARENA = arena_init(DEFAULT_ARENA_SIZE);
@@ -989,9 +990,12 @@ void global_init(void)
     elf_code = strbuf_create(MAX_CODE);
     elf_data = strbuf_create(MAX_DATA);
     elf_header = strbuf_create(MAX_HEADER);
+    elf_program_header = strbuf_create(MAX_PROGRAM_HEADER);
     elf_symtab = strbuf_create(MAX_SYMTAB);
     elf_strtab = strbuf_create(MAX_STRTAB);
     elf_section = strbuf_create(MAX_SECTION);
+    elf_section_header = strbuf_create(MAX_SECTION_HEADER);
+    elf_shstr = strbuf_create(MAX_SHSTR);
 }
 
 void global_release(void)
@@ -1011,9 +1015,12 @@ void global_release(void)
     strbuf_free(elf_code);
     strbuf_free(elf_data);
     strbuf_free(elf_header);
+    strbuf_free(elf_program_header);
     strbuf_free(elf_symtab);
     strbuf_free(elf_strtab);
     strbuf_free(elf_section);
+    strbuf_free(elf_section_header);
+    strbuf_free(elf_shstr);
 }
 
 /* Reports an error without specifying a position */

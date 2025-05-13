@@ -449,8 +449,6 @@ void emit_ph2_ir(ph2_ir_t *ph2_ir)
 
 void code_generate(void)
 {
-    elf_data_start = elf_code_start + elf_offset;
-
     /* start */
     emit(__movw(__AL, __r8, GLOBAL_FUNC->stack_size));
     emit(__movt(__AL, __r8, GLOBAL_FUNC->stack_size));
