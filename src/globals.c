@@ -86,9 +86,13 @@ strbuf_t *elf_strtab;
 strbuf_t *elf_section;
 strbuf_t *elf_section_header;
 strbuf_t *elf_shstr;
-int elf_header_len = 0x54; /* ELF fixed: 0x34 + 1 * 0x20 */
+strbuf_t *elf_interp;
+int elf_header_len;
 int elf_code_start;
 int elf_data_start;
+
+/* Dynamic linking flag */
+bool dynlink = false;
 
 /**
  * arena_block_create() - Creates a new arena block with given capacity.
@@ -996,6 +1000,7 @@ void global_init(void)
     elf_section = strbuf_create(MAX_SECTION);
     elf_section_header = strbuf_create(MAX_SECTION_HEADER);
     elf_shstr = strbuf_create(MAX_SHSTR);
+    elf_interp = strbuf_create(MAX_INTERP);
 }
 
 void global_release(void)
@@ -1021,6 +1026,7 @@ void global_release(void)
     strbuf_free(elf_section);
     strbuf_free(elf_section_header);
     strbuf_free(elf_shstr);
+    strbuf_free(elf_interp);
 }
 
 /* Reports an error without specifying a position */

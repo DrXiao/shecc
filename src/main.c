@@ -55,6 +55,8 @@ int main(int argc, char *argv[])
             hard_mul_div = 1;
         else if (!strcmp(argv[i], "--no-libc"))
             libc = 0;
+        else if (!strcmp(argv[i], "--dynlink"))
+            dynlink = true;
         else if (!strcmp(argv[i], "-o")) {
             if (i < argc + 1) {
                 out = argv[i + 1];
@@ -71,7 +73,7 @@ int main(int argc, char *argv[])
     if (!in) {
         printf("Missing source file!\n");
         printf(
-            "Usage: shecc [-o output] [+m] [--dump-ir] [--no-libc] "
+            "Usage: shecc [-o output] [+m] [--dump-ir] [--no-libc] [--dynlink]"
             "<input.c>\n");
         return -1;
     }

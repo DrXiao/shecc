@@ -12,6 +12,7 @@
 #include "globals.c"
 
 int elf_symbol_index;
+char *dyn_linker;
 
 void elf_write_str(strbuf_t *elf_array, char *vals)
 {
@@ -52,6 +53,13 @@ void elf_generate_header(void)
     elf32_hdr_t hdr;
     int shoff = elf_header_len + elf_code->size + elf_data->size +
                 elf_shstr->size + elf_symtab->size + elf_strtab->size;
+    int phnum = 1, shnum = 6, shstrndx = 5;
+    if (dynlink) {
+        shoff += elf_interp->size;
+        phnum += 1;
+        shnum += 1;
+        shstrndx += 1;
+    }
     /*
      * The following table explains the meaning of each field in the
      * ELF32 file header.
@@ -128,19 +136,20 @@ void elf_generate_header(void)
     hdr.e_ehsize[1] = 0;
     hdr.e_phentsize[0] = sizeof(elf32_phdr_t); /* program header size */
     hdr.e_phentsize[1] = 0;
-    hdr.e_phnum[0] = 1; /* number of program headers */
+    hdr.e_phnum[0] = phnum; /* number of program headers */
     hdr.e_phnum[1] = 0;
     hdr.e_shentsize[0] = sizeof(elf32_shdr_t); /* section header size */
     hdr.e_shentsize[1] = 0;
-    hdr.e_shnum[0] = 6; /* number of section headers */
+    hdr.e_shnum[0] = shnum; /* number of section headers */
     hdr.e_shnum[1] = 0;
-    hdr.e_shstrndx[0] = 5; /* section index with names */
+    hdr.e_shstrndx[0] = shstrndx; /* section index with names */
     hdr.e_shstrndx[1] = 0;
     elf_write_blk(elf_header, &hdr, sizeof(elf32_hdr_t));
 }
 
 void elf_generate_program_headers(void)
 {
+    elf32_phdr_t phdr;
     /*
      * Explain the meaning of each field in the ELF32 program header.
      *
@@ -163,16 +172,29 @@ void elf_generate_program_headers(void)
      * ---+----------------+-------------------------------------------------+
      * 54 |                |                                                 |
      */
+    if (dynlink) {
+        /* program header - program interpreter */
+        phdr.p_type = 3;                           /* PT_INTERP */
+        phdr.p_offset = elf_header_len;            /* offset of segment */
+        phdr.p_vaddr = ELF_START + elf_header_len; /* virtual address */
+        phdr.p_paddr = ELF_START + elf_header_len; /* physical address */
+        phdr.p_filesz = strlen(dyn_linker) + 1;    /* size in file */
+        phdr.p_memsz = strlen(dyn_linker) + 1;     /* size in memory */
+        phdr.p_flags = 4;                          /* flags */
+        phdr.p_align = 1;                          /* alignment */
+        elf_write_blk(elf_program_header, &phdr, sizeof(elf32_phdr_t));
+    }
     /* program header - code and data combined */
-    elf32_phdr_t phdr;
-    phdr.p_type = 1;                                 /* PT_LOAD */
-    phdr.p_offset = elf_header_len;                  /* offset of segment */
-    phdr.p_vaddr = ELF_START + elf_header_len;       /* virtual address */
-    phdr.p_paddr = ELF_START + elf_header_len;       /* physical address */
-    phdr.p_filesz = elf_code->size + elf_data->size; /* size in file */
-    phdr.p_memsz = elf_code->size + elf_data->size;  /* size in memory */
-    phdr.p_flags = 7;                                /* flags */
-    phdr.p_align = 4;                                /* alignment */
+    phdr.p_type = 1;                                   /* PT_LOAD */
+    phdr.p_offset = elf_header_len + elf_interp->size; /* offset of segment */
+    phdr.p_vaddr =
+        ELF_START + elf_header_len + elf_interp->size; /* virtual address */
+    phdr.p_paddr =
+        ELF_START + elf_header_len + elf_interp->size; /* physical address */
+    phdr.p_filesz = elf_code->size + elf_data->size;   /* size in file */
+    phdr.p_memsz = elf_code->size + elf_data->size;    /* size in memory */
+    phdr.p_flags = 7;                                  /* flags */
+    phdr.p_align = 4;                                  /* alignment */
     elf_write_blk(elf_program_header, &phdr, sizeof(elf32_phdr_t));
 }
 
@@ -222,11 +244,27 @@ void elf_generate_section_headers(void)
     shdr.sh_entsize = 0;
     elf_write_blk(elf_section_header, &shdr, sizeof(elf32_shdr_t));
 
+    /* .interp section */
+    if (dynlink) {
+        shdr.sh_name = 39;
+        shdr.sh_type = 1;
+        shdr.sh_flags = 0;
+        shdr.sh_addr = ELF_START + elf_header_len;
+        shdr.sh_offset = ofs;
+        shdr.sh_size = strlen(dyn_linker) + 1;
+        shdr.sh_link = 0;
+        shdr.sh_info = 0;
+        shdr.sh_addralign = 1;
+        shdr.sh_entsize = 0;
+        elf_write_blk(elf_section_header, &shdr, sizeof(elf32_shdr_t));
+        ofs += elf_interp->size;
+    }
+
     /* .text */
     shdr.sh_name = 0xb;
     shdr.sh_type = 1;
     shdr.sh_flags = 7;
-    shdr.sh_addr = ELF_START + elf_header_len;
+    shdr.sh_addr = ELF_START + elf_header_len + elf_interp->size;
     shdr.sh_offset = ofs;
     shdr.sh_size = elf_code->size;
     shdr.sh_link = 0;
@@ -257,7 +295,7 @@ void elf_generate_section_headers(void)
     shdr.sh_addr = 0;
     shdr.sh_offset = ofs;
     shdr.sh_size = elf_symtab->size;
-    shdr.sh_link = 4;
+    shdr.sh_link = 4 + dynlink;
     shdr.sh_info = elf_symbol_index;
     shdr.sh_addralign = 4;
     shdr.sh_entsize = 16;
@@ -292,16 +330,10 @@ void elf_generate_section_headers(void)
     elf_write_blk(elf_section_header, &shdr, sizeof(elf32_shdr_t));
 }
 
-void elf_align(void)
+void elf_align(strbuf_t *elf_array)
 {
-    while (elf_data->size & 3)
-        elf_write_byte(elf_data, 0);
-
-    while (elf_symtab->size & 3)
-        elf_write_byte(elf_symtab, 0);
-
-    while (elf_strtab->size & 3)
-        elf_write_byte(elf_strtab, 0);
+    while (elf_array->size & 3)
+        elf_write_byte(elf_array, 0);
 }
 
 void elf_generate_sections(void)
@@ -326,6 +358,10 @@ void elf_generate_sections(void)
     elf_write_byte(elf_shstr, 0);
     elf_write_str(elf_shstr, ".strtab");
     elf_write_byte(elf_shstr, 0);
+    if (dynlink) {
+        elf_write_str(elf_shstr, ".interp");
+        elf_write_byte(elf_shstr, 0);
+    }
     elf_write_blk(elf_section, elf_shstr->elements, elf_shstr->size);
 }
 
@@ -343,9 +379,19 @@ void elf_add_symbol(char *symbol, int pc)
 
 void elf_preprocess(void)
 {
-    elf_align();
+    elf_align(elf_data);
+    elf_align(elf_symtab);
+    elf_align(elf_strtab);
     elf_generate_sections();
-    elf_code_start = ELF_START + elf_header_len;
+    elf_header_len = sizeof(elf32_hdr_t) + sizeof(elf32_phdr_t);
+    if (dynlink) {
+        elf_header_len += sizeof(elf32_phdr_t);
+        dyn_linker = DYN_LINKER;
+        elf_write_str(elf_interp, dyn_linker);
+        elf_write_byte(elf_interp, 0);
+        elf_align(elf_interp);
+    }
+    elf_code_start = ELF_START + elf_header_len + elf_interp->size;
     elf_data_start = elf_code_start + elf_offset;
 }
 
@@ -366,6 +412,8 @@ void elf_generate(char *outfile)
         fputc(elf_header->elements[i], fp);
     for (int i = 0; i < elf_program_header->size; i++)
         fputc(elf_program_header->elements[i], fp);
+    for (int i = 0; i < elf_interp->size; i++)
+        fputc(elf_interp->elements[i], fp);
     for (int i = 0; i < elf_code->size; i++)
         fputc(elf_code->elements[i], fp);
     for (int i = 0; i < elf_data->size; i++)
