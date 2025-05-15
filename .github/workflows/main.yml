@@ -39,7 +39,7 @@ jobs:
         githubToken: ${{ github.token }}
         install: |
           apt-get update -qq -y
-          apt-get install -yqq build-essential
+          apt-get install -yqq build-essential graphviz jq
         run: |
           make config ARCH=arm
           make check || exit 1

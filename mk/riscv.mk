@@ -1,9 +1,5 @@
-TARGET_EXEC = qemu-riscv32
+ARCH_EXEC = qemu-riscv32
 TARGET_EXEC := $(shell which $(TARGET_EXEC))
-ifndef TARGET_EXEC
-$(warning "no qemu-riscv32 found. Please check package installation")
-TARGET_EXEC = echo WARN: unable to run
-endif
 
 export TARGET_EXEC
 

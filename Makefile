@@ -42,6 +42,7 @@ ifeq (,$(filter $(ARCH),$(ARCHS)))
 $(error Support ARM and RISC-V only. Select the target with "ARCH=arm" or "ARCH=riscv")
 endif
 include mk/$(ARCH).mk
+include mk/check.mk
 
 config:
 	$(Q)ln -s $(PWD)/$(SRCDIR)/$(ARCH)-codegen.c $(SRCDIR)/codegen.c
