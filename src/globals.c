@@ -90,6 +90,9 @@ strbuf_t *elf_interp;
 strbuf_t *elf_dynamic;
 strbuf_t *elf_dynsym;
 strbuf_t *elf_dynstr;
+strbuf_t *elf_relplt;
+strbuf_t *elf_plt;
+strbuf_t *elf_gotplt;
 int elf_header_len;
 int elf_code_start;
 int elf_data_start;
@@ -1007,6 +1010,9 @@ void global_init(void)
     elf_dynamic = strbuf_create(MAX_DYNAMIC);
     elf_dynsym = strbuf_create(MAX_DYNSYM);
     elf_dynstr = strbuf_create(MAX_DYNSTR);
+    elf_relplt = strbuf_create(MAX_RELPLT);
+    elf_plt = strbuf_create(MAX_PLT);
+    elf_gotplt = strbuf_create(MAX_GOTPLT);
 }
 
 void global_release(void)
@@ -1036,6 +1042,9 @@ void global_release(void)
     strbuf_free(elf_dynamic);
     strbuf_free(elf_dynsym);
     strbuf_free(elf_dynstr);
+    strbuf_free(elf_relplt);
+    strbuf_free(elf_plt);
+    strbuf_free(elf_gotplt);
 }
 
 /* Reports an error without specifying a position */
