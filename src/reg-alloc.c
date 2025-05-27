@@ -307,6 +307,8 @@ void reg_alloc(void)
     }
 
     for (func_t *func = FUNC_LIST.head; func; func = func->next) {
+        if (!func->bbs)
+            continue;
         func->visited++;
 
         if (!strcmp(func->return_def.var_name, "main"))
