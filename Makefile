@@ -22,9 +22,11 @@ STAGE0 := shecc
 STAGE1 := shecc-stage1.elf
 STAGE2 := shecc-stage2.elf
 
+BUILTIN_LIBC ?= c.c
 STAGE0_FLAGS ?= --dump-ir
 STAGE1_FLAGS ?=
 ifeq ($(DYNLINK),1)
+BUILTIN_LIBC := dyn-c.c
 STAGE0_FLAGS += --dynlink
 STAGE1_FLAGS += --dynlink
 endif
@@ -99,9 +101,9 @@ $(OUT)/%.o: %.c
 	$(Q)$(CC) -o $@ $(CFLAGS) -c -MMD -MF $@.d $<
 
 SHELL_HACK := $(shell mkdir -p $(OUT) $(OUT)/$(SRCDIR) $(OUT)/tests)
-$(OUT)/libc.inc: $(OUT)/inliner $(LIBDIR)/c.c
+$(OUT)/libc.inc: $(OUT)/inliner $(LIBDIR)/$(BUILTIN_LIBC)
 	$(VECHO) "  GEN\t$@\n"
-	$(Q)$(OUT)/inliner $(LIBDIR)/c.c $@
+	$(Q)$(OUT)/inliner $(LIBDIR)/$(BUILTIN_LIBC) $@
 
 $(OUT)/inliner: tools/inliner.c
 	$(VECHO) "  CC+LD\t$@\n"

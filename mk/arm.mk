@@ -6,6 +6,7 @@ ARCH_DEFS = \
     \#define ARCH_PREDEFINED \"__arm__\" /* defined by GNU C and RealView */\n$\
     \#define ELF_MACHINE 0x28 /* up to ARMv7/Aarch32 */\n$\
     \#define ELF_FLAGS 0x5000200\n$\
-    \#define DYN_LINKER \"/lib/ld-linux.so.3\"$\
+    \#define DYN_LINKER \"/lib/ld-linux.so.3\"\n$\
+    \#define LIBC_SO \"libc.so.6\"\n$\
     "
 RUNNER_LD_PREFIX=-L /usr/arm-linux-gnueabi/
