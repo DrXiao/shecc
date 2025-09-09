@@ -770,11 +770,39 @@ void reg_alloc(void)
                     if (!callee_func->num_params)
                         spill_alive(bb, insn);
 
-                    if (dynlink)
+                    if (dynlink) {
                         callee_func->is_used = true;
+                        if (!callee_func->bbs) {
+                            int ofs = 0;
+                            if (args > 4) {
+                                /* Store args to stack for Arm output */
+                                for (int i = 4; i < args; i++) {
+                                    ir = bb_add_ph2_ir(bb, OP_store);
+                                    ir->src0 = i;
+                                    ir->src1 = ofs;
+                                    ofs += 4;
+                                }
+                            }
+                            /* FIXME:
+                             * use a better way to preserve global pointer */
+                            ir = bb_add_ph2_ir(bb, OP_store);
+                            ir->src0 = 12;
+                            ir->src1 = 16;
+                        }
+                    }
 
                     ir = bb_add_ph2_ir(bb, OP_call);
                     strcpy(ir->func_name, insn->str);
+
+                    if (dynlink) {
+                        if (!callee_func->bbs) {
+                            /* FIXME:
+                             * use a better way to restore global pointer */
+                            ir = bb_add_ph2_ir(bb, OP_load);
+                            ir->dest = 12;
+                            ir->src0 = 16;
+                        }
+                    }
 
                     is_pushing_args = false;
                     args = 0;
