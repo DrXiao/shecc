@@ -93,16 +93,16 @@ check: check-stage0 check-stage2
 
 check-stage0: $(OUT)/$(STAGE0) $(TESTBINS) tests/driver.sh
 	$(VECHO) "  TEST STAGE 0\n"
-	tests/driver.sh 0
+	tests/driver.sh 0 $(LINK_MODE)
 
 check-stage2: $(OUT)/$(STAGE2) $(TESTBINS) tests/driver.sh
 	$(VECHO) "  TEST STAGE 2\n"
-	tests/driver.sh 2
+	tests/driver.sh 2 $(LINK_MODE)
 
 check-sanitizer: $(OUT)/$(STAGE0)-sanitizer tests/driver.sh
 	$(VECHO) "  TEST STAGE 0 (with sanitizers)\n"
 	$(Q)cp $(OUT)/$(STAGE0)-sanitizer $(OUT)/shecc
-	tests/driver.sh 0
+	tests/driver.sh 0 $(LINK_MODE)
 	$(Q)rm $(OUT)/shecc
 
 check-snapshots: $(OUT)/$(STAGE0) $(SNAPSHOTS) tests/check-snapshots.sh
