@@ -4,20 +4,27 @@ set -u
 
 readonly SHECC="$PWD/out/shecc"
 
-if [ "$#" != 1 ]; then
-    echo "Usage: $0 <architecture>"
+if [ "$#" != 2 ]; then
+    echo "Usage: $0 <architecture> <link_mode>"
     exit 1
 fi
 
 readonly ARCH="$1"
+readonly MODE="$2"
+
+if [ "$MODE" = "dynamic" ]; then
+    readonly SHECC_CFLAGS="--dynlink"
+else
+    readonly SHECC_CFLAGS=""
+fi
 
 function check_snapshot() {
     local source="$1"
-    local ref="tests/snapshots/$(basename $source .c)-$ARCH.json"
+    local ref="tests/snapshots/$(basename $source .c)-$ARCH-$MODE.json"
     local temp_exe=$(mktemp)
     local temp_json=$(mktemp --suffix .json)
 
-    $SHECC --dump-ir -o $temp_exe $source &>/dev/null
+    $SHECC $SHECC_CFLAGS --dump-ir -o $temp_exe $source &>/dev/null
     dot -Tdot_json -o $temp_json CFG.dot
     diff -q <(cat $ref) \
             <(sed -E "/0x[0-9a-f]+/d" $temp_json | \
