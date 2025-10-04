@@ -44,7 +44,8 @@ SRCDIR := $(shell find src -type d)
 LIBDIR := $(shell find lib -type d)
 LINK_MODES = static dynamic
 
-BUILTIN_LIBC ?= c.c
+BUILTIN_LIBC_SOURCE ?= c.c
+BUILTIN_LIBC_HEADER := c.h
 STAGE0_FLAGS ?= --dump-ir
 STAGE1_FLAGS ?=
 ifeq ($(LINK_MODE),dynamic)
@@ -52,7 +53,6 @@ ifeq ($(LINK_MODE),dynamic)
         # TODO: implement dynamic linking for RISC-V.
         $(error "Dynamic linking mode is not implemented for RISC-V")
     endif
-    BUILTIN_LIBC := c.h
     STAGE0_FLAGS += --dynlink
     STAGE1_FLAGS += --dynlink
 endif
@@ -139,11 +139,12 @@ $(OUT)/norm-lf: tools/norm-lf.c
 	$(VECHO) "  CC+LD\t$@\n"
 	$(Q)$(CC) $(CFLAGS) -o $@ $^
 
-$(OUT)/libc.inc: $(OUT)/inliner $(OUT)/norm-lf $(LIBDIR)/$(BUILTIN_LIBC)
+$(OUT)/libc.inc: $(OUT)/inliner $(OUT)/norm-lf $(LIBDIR)/$(BUILTIN_LIBC_SOURCE) $(LIBDIR)/$(BUILTIN_LIBC_HEADER)
 	$(VECHO) "  GEN\t$@\n"
-	$(Q)$(OUT)/norm-lf $(LIBDIR)/$(BUILTIN_LIBC) $(OUT)/c.normalized.c
-	$(Q)$(OUT)/inliner $(OUT)/c.normalized.c $@
-	$(Q)$(RM) $(OUT)/c.normalized.c
+	$(Q)$(OUT)/norm-lf $(LIBDIR)/$(BUILTIN_LIBC_SOURCE) $(OUT)/c.normalized.c
+	$(Q)$(OUT)/norm-lf $(LIBDIR)/$(BUILTIN_LIBC_HEADER) $(OUT)/c.normalized.h
+	$(Q)$(OUT)/inliner $(OUT)/c.normalized.c $(OUT)/c.normalized.h $@
+	$(Q)$(RM) $(OUT)/c.normalized.c $(OUT)/c.normalized.h
 
 $(OUT)/inliner: tools/inliner.c
 	$(VECHO) "  CC+LD\t$@\n"
