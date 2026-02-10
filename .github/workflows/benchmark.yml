@@ -23,7 +23,7 @@ jobs:
             lib/c.c
 
       - name: Download dependencies
-        if: steps.changed-files.outputs.any_changed == 'true' || github.event_name == 'workflow_dispatch'
+        # if: steps.changed-files.outputs.any_changed == 'true' || github.event_name == 'workflow_dispatch'
         run: |
           sudo dpkg --add-architecture armhf
           sudo apt-get update -q -y
@@ -34,7 +34,7 @@ jobs:
           sudo apt-get install -q -y python3
 
       - name: Measure execution time and memory use for bootstrapping
-        if: steps.changed-files.outputs.any_changed == 'true' || github.event_name == 'workflow_dispatch'
+        # if: steps.changed-files.outputs.any_changed == 'true' || github.event_name == 'workflow_dispatch'
         run: |
           make bench CC=gcc
           make bench CC=gcc DYNLINK=1
