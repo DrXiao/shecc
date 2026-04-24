@@ -91,6 +91,56 @@ jobs:
         run: |
           make check DYNLINK=${{ steps.determine-mode.outputs.DYNLINK }} || exit 1
 
+  host-riscv:
+    runs-on: ubuntu-24.04-riscv
+    strategy:
+      matrix:
+        link_mode: [static, dynamic]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download dependencies
+        run: |
+          sudo apt-get update -q -y
+          sudo apt-get install -q -y graphviz jq
+          sudo apt-get install -q -y build-essential libc6
+          sudo wget https://github.com/fastfetch-cli/fastfetch/releases/download/2.58.0/fastfetch-linux-riscv64.deb
+          sudo dpkg -i fastfetch-linux-riscv64.deb
+          sudo wget -q https://github.com/riscv-collab/riscv-gnu-toolchain/releases/download/2026.04.05/riscv32-glibc-ubuntu-24.04-gcc.tar.xz
+          sudo tar Jxf riscv32-glibc-ubuntu-24.04-gcc.tar.xz -C /opt
+          sudo ln -s /opt/riscv/sysroot/lib/ld-linux-riscv32-ilp32d.so.1 /usr/lib/
+          echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/riscv/sysroot/lib" >> $GITHUB_ENV
+          echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/riscv/sysroot/usr/lib" >> $GITHUB_ENV
+
+      - name: Test
+        run: |
+          fastfetch
+          ls /usr/lib/ld*
+
+      - name: Determine static or dynamic linking mode
+        id: determine-mode
+        run: |
+          if [ "${{ matrix.link_mode }}" = "dynamic" ]; then
+            echo "Use dynamic linking mode"
+            echo "DYNLINK=1" >> "$GITHUB_OUTPUT"
+          else
+            echo "Use static linking mode"
+            echo "DYNLINK=0" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build artifacts
+        run: |
+          make ARCH=riscv DYNLINK=${{ steps.determine-mode.outputs.DYNLINK }}
+
+      - name: Sanitizer-enabled stage 0 tests
+        run: |
+          make check-sanitizer ARCH=riscv DYNLINK=${{ steps.determine-mode.outputs.DYNLINK }} || exit 1
+
+      - name: Unit tests
+        run: |
+          make check ARCH=riscv DYNLINK=${{ steps.determine-mode.outputs.DYNLINK }} || exit 1
+
   preprocessor-host:
     runs-on: ubuntu-24.04
     strategy:
