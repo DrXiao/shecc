@@ -16,31 +16,4 @@ ARCH_DEFS = \
     \#define MAX_ARGS_IN_REG 8\n$\
     "
 
-ifeq ($(USE_QEMU),1)
-    ifeq ($(DYNLINK),1)
-        CROSS_COMPILE = riscv32-unknown-linux-gnu-
-        RISCV_CC = $(CROSS_COMPILE)gcc
-        RISCV_CC := $(shell which $(RISCV_CC))
-        ifndef RISCV_CC
-            $(error "Unable to find RISC-V GNU toolchain.")
-        endif
-
-        LD_LINUX_PATH := $(shell cd $(shell $(RISCV_CC) --print-sysroot) 2>/dev/null && pwd)
-        ifeq ("$(LD_LINUX_PATH)","/")
-            LD_LINUX_PATH := $(shell dirname "$(shell which $(RISCV_CC))")/..
-            LD_LINUX_PATH := $(shell cd $(LD_LINUX_PATH) 2>/dev/null && pwd)
-            LD_LINUX_PATH := $(LD_LINUX_PATH)/$(shell echo $(CROSS_COMPILE) | sed s'/.$$//')/libc
-            LD_LINUX_PATH := $(shell cd $(LD_LINUX_PATH) 2>/dev/null && pwd)
-            ifndef LD_LINUX_PATH
-                LD_LINUX_PATH = /usr/$(shell echo $(CROSS_COMPILE) | sed s'/.$$//')
-                LD_LINUX_PATH := $(shell cd $(LD_LINUX_PATH) 2>/dev/null && pwd)
-            endif
-        endif
-
-        ifndef LD_LINUX_PATH
-            $(error "Dynamic linking mode requires ld-linux.so")
-        endif
-
-        RUNNER_LD_PREFIX = -L $(LD_LINUX_PATH)
-    endif
-endif
+TOOLCHAIN_CANDIDATES = riscv32-unknown-linux-gnu-
