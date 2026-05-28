@@ -116,20 +116,11 @@ check-snapshot: $(OUT)/$(STAGE0) tests/check-snapshots.sh
 	tests/check-snapshots.sh $(ARCH) $(DYNLINK)
 	$(VECHO) "  OK\n"
 
-# TODO: Add an ABI conformance test suite for the RISC-V architecture
 check-abi-stage0: $(OUT)/$(STAGE0)
-	$(Q)if [ "$(ARCH)" = "arm" ]; then \
-		tests/$(ARCH)-abi.sh 0 $(DYNLINK); \
-	else \
-		echo "Skip ABI compliance validation"; \
-	fi
+	tests/$(ARCH)-abi.sh 0 $(DYNLINK);
 
 check-abi-stage2: $(OUT)/$(STAGE2)
-	$(Q)if [ "$(ARCH)" = "arm" ]; then \
-		tests/$(ARCH)-abi.sh 2 $(DYNLINK); \
-	else \
-		echo "Skip ABI compliance validation"; \
-	fi
+	tests/$(ARCH)-abi.sh 2 $(DYNLINK);
 
 update-snapshots: tests/update-snapshots.sh
 	# static linking
