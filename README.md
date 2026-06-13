@@ -18,6 +18,7 @@ Despite its simplistic nature, it is capable of performing basic optimization st
   while the second pass translates these operations into Arm/RISC-V machine code.
 * Develop a register allocation system that is compatible with RISC-style architectures.
 * Implement an architecture-independent, [static single assignment](https://en.wikipedia.org/wiki/Static_single-assignment_form) (SSA)-based middle-end for enhanced optimizations.
+* Support dynamic linking to allow generated executables to run with glibc.
 
 ## Compatibility
 
@@ -62,6 +63,7 @@ Code generator in `shecc` does not rely on external utilities. You only need
 ordinary C compilers such as `gcc` and `clang`. However, `shecc` would bootstrap
 itself, and Arm/RISC-V ISA emulation is required. Install QEMU for Arm/RISC-V user
 emulation on GNU/Linux:
+
 ```shell
 $ sudo apt-get install qemu-user
 ```
@@ -79,14 +81,23 @@ To execute the snapshot test, install the packages below:
 $ sudo apt-get install graphviz jq
 ```
 
-Additionally, because `shecc` supports the dynamic linking mode for the Arm architecture,
-it needs to install the ARM GNU toolchain to obtain the ELF interpreter and other dependencies:
+### Additional packages
+
+Because `shecc` supports the dynamic linking mode for both the Arm and RISC-V architectures,
+it needs to install cross-compile GNU toolchains to obtain the ELF interpreter and other dependencies.
+
+For the Arm architecture, you can install the ARM GNU toolchain using `apt-get`:
+
 ```shell
 $ sudo apt-get install gcc-arm-linux-gnueabihf
 ```
 Another approach is to manually download and install the toolchain from [ARM Developer website](https://developer.arm.com/downloads/-/arm-gnu-toolchain-downloads).
+Select "x86_64 Linux hosted cross toolchains" - "AArch32 GNU/Linux target with hard float (arm-none-linux-gnueabihf)"
+to download the toolchain.
 
-Select "x86_64 Linux hosted cross toolchains" - "AArch32 GNU/Linux target with hard float (arm-none-linux-gnueabihf)" to download the toolchain.
+Since `apt-get` does not provide the necessary RISC-V GNU toolchain, it must be downloaded manually if you want to
+run a dynamically linked `shecc` targeting the RISC-V architecture. For instance, you can download and extract the
+`riscv32-glibc-ubuntu-22.04-gcc.tar.xz` package from the [riscv-gnu-gcc](https://github.com/riscv-collab/riscv-gnu-toolchain) repository.
 
 ## Build and Verify
 
@@ -113,6 +124,7 @@ $ make
 Run `make DYNLINK=1` to use the dynamic linking mode and generate the dynamically linked compiler:
 ```shell
 # If using the dynamic linking mode, you should add 'DYNLINK=1' for each 'make' command.
+# Append 'ARCH=arm' or 'ARCH=riscv' to specify the target architecture (default: arm).
 $ make DYNLINK=1
   CC+LD	out/inliner
   GEN	out/libc.inc
@@ -152,7 +164,7 @@ $ qemu-arm fib
 
 Example 2: dynamic linking mode
 
-Notice that `/usr/arm-linux-gnueabihf` is the ELF interpreter prefix. Since the path may be different if you manually install the ARM GNU toolchain instead of using `apt-get`, you should set the prefix to the actual path.
+Notice that `/usr/arm-linux-gnueabihf` is the ELF interpreter prefix. Since the path may be different if you manually install the ARM/RISC-V GNU toolchain instead of using `apt-get`, you should set the prefix to the actual path.
 ```shell
 $ out/shecc --dynlink -o fib tests/fib.c
 $ chmod +x fib
