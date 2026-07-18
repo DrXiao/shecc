@@ -409,6 +409,17 @@ declare -a arithmetic_tests=(
 run_expr_tests arithmetic_tests
 expr 6 "111 % 7"
 
+try_output 0 "1 1 -1 -1" << EOF
+int v1 = 5 % 4;
+int v2 = 5 % -4;
+int v3 = -5 % 4;
+int v4 = -5 % -4;
+int main() {
+    printf("%d %d %d %d", v1, v2, v3, v4);
+    return 0;
+}
+EOF
+
 # Category: Overflow Behavior
 begin_category "Overflow Behavior" "Testing integer overflow handling"
 
