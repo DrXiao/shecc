@@ -4,6 +4,7 @@
  * shecc is freely redistributable under the BSD 2 clause license. See the
  * file "LICENSE" for information on usage and redistribution of this file.
  */
+#include <limits.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -3512,16 +3513,29 @@ int eval_expression_imm(opcode_t op, int op1, int op2)
         res = op1 * op2;
         break;
     case OP_div:
+        if (!op2)
+            error_at("Division by zero in constant expression",
+                     cur_token_loc());
         res = op1 / op2;
         break;
     case OP_mod:
+        if (!op2)
+            error_at("Modulo by zero in constant expression", cur_token_loc());
         /* Use bitwise AND for modulo optimization when divisor is power of 2 */
-        tmp &= (tmp - 1);
-        if ((op2 != 0) && (tmp == 0)) {
-            res = op1;
-            res &= (op2 - 1);
-        } else
+        if (tmp == INT_MIN) {
             res = op1 % op2;
+            break;
+        }
+        tmp = tmp < 0 ? -tmp : tmp;
+        tmp &= (tmp - 1);
+        if (tmp != 0) {
+            res = op1 % op2;
+            break;
+        }
+        op2 = op2 < 0 ? -op2 : op2;
+        res = op1 & (op2 - 1);
+        if (op1 < 0 && res != 0)
+            res -= op2;
         break;
     case OP_lshift:
         res = op1 << op2;
