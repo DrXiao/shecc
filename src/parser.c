@@ -3513,9 +3513,14 @@ int eval_expression_imm(opcode_t op, int op1, int op2)
         res = op1 * op2;
         break;
     case OP_div:
+        if (!op2)
+            error_at("Division by zero in constant expression",
+                     cur_token_loc());
         res = op1 / op2;
         break;
     case OP_mod:
+        if (!op2)
+            error_at("Modulo by zero in constant expression", cur_token_loc());
         /* Use bitwise AND for modulo optimization when divisor is power of 2 */
         if (tmp == INT_MIN) {
             res = op1 % op2;

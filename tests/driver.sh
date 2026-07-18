@@ -420,6 +420,16 @@ int main() {
 }
 EOF
 
+try_compile_error << EOF
+int value = 1 / 0;
+int main() { return value; }
+EOF
+
+try_compile_error << EOF
+int value = 1 % 0;
+int main() { return value; }
+EOF
+
 # Category: Overflow Behavior
 begin_category "Overflow Behavior" "Testing integer overflow handling"
 
