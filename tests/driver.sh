@@ -1431,7 +1431,7 @@ int main() {
 }
 EOF
 
-# Test reverse pointer difference  
+# Test reverse pointer difference
 try_ 5 << EOF
 int main() {
     char data[50];
@@ -1989,7 +1989,7 @@ int main() {
 }
 EOF
 
-# Test 6: Non-const pointer to const data  
+# Test 6: Non-const pointer to const data
 try_ 35 << EOF
 int main() {
     const int value = 35;
