@@ -910,6 +910,12 @@ items 10 "for(;;) break; return 10;"
 items 0 "int x; for(x = 10; x > 0; x--); return x;"
 items 30 "int i; int acc; i = 0; acc = 0; do { i = i + 1; if (i - 1 < 5) continue; acc = acc + i; if (i == 9) break; } while (i < 10); return acc;"
 items 26 "int acc; acc = 0; int i; for (i = 0; i < 100; i++) { if (i < 5) continue; if (i == 9) break; acc = acc + i; } return acc;"
+items 1 "int i = 0; for (;;) { i++; if (i < 4) { continue; } break; } return i == 4;"
+items 14 "int n = 0; for (int i = 0;;) { i++; if (i < 14) { continue; } n = i; break; } return n;"
+items 14 "int i = 0; for (; i < 20;) { i++; if (i < 14) { continue; } break; } return i;"
+items 14 "int n = 0; for (int i = 0; i < 20;) { i++; if (i < 14) { continue; } n = i; break; } return n;"
+items 14 "int i = 0; for (; i < 14;) { i++; } return i;"
+items 0 "int i = 0; for (;; i++) { break; } return i;"
 
 # Category: Comments
 begin_category "Comments" "Testing C-style and C++-style comment parsing"
@@ -1425,7 +1431,7 @@ int main() {
 }
 EOF
 
-# Test reverse pointer difference  
+# Test reverse pointer difference
 try_ 5 << EOF
 int main() {
     char data[50];
@@ -1983,7 +1989,7 @@ int main() {
 }
 EOF
 
-# Test 6: Non-const pointer to const data  
+# Test 6: Non-const pointer to const data
 try_ 35 << EOF
 int main() {
     const int value = 35;

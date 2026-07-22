@@ -4027,14 +4027,31 @@ basic_block_t *read_body_statement(block_t *parent, basic_block_t *bb)
         bb_connect(cond_, body_, THEN);
         body_ = read_body_statement(blk, body_);
 
-        if (body_) {
+        /* Normal fallthrough from the loop body goes through the increment
+         * block. A continue statement may already have connected another
+         * predecessor to inc_.
+         */
+        if (body_)
             bb_connect(body_, inc_, NEXT);
-            bb_connect(inc_, cond_start, NEXT);
-        } else if (inc_->insn_list.head) {
-            bb_connect(inc_, cond_start, NEXT);
-        } else {
-            /* Empty increment block - cleanup handled by arena allocator */
+
+        /* An empty increment block still needs its back-edge when it is
+         * reachable through normal fallthrough or continue.
+         *
+         * Do not connect a completely unreachable increment block, such as:
+         *
+         *     for (;;) {
+         *         break;
+         *     }
+         */
+        bool has_pred = false;
+        for (int i = 0; i < MAX_BB_PRED; i++) {
+            if (inc_->prev[i].bb) {
+                has_pred = true;
+                break;
+            }
         }
+        if (has_pred)
+            bb_connect(inc_, cond_start, NEXT);
 
         /* jump to increment */
         continue_pos_idx--;
