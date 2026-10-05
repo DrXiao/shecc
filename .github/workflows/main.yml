@@ -147,6 +147,8 @@ jobs:
       ARCH: ${{ matrix.architecture }}
       DYNLINK: ${{ matrix.link_mode == 'dynamic' && '1' || '0' }}
     steps:
+      - name: Check page size
+        run: getconf PAGE_SIZE
       - name: Checkout code
         uses: actions/checkout@v7
       - name: Set up the build environment
